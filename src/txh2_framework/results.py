@@ -154,6 +154,9 @@ def summarize(pm: PlanningModel) -> Summary:
         "hydrogen_revenue": -p.rho_h * annual(v["h_se"]).sum(),
         "oxygen_revenue": -p.rho_o * annual(v["o"]).sum(),
     }, name="k$_per_year").to_frame()
+    if not np.all(np.isfinite(costs["k$_per_year"].to_numpy())):
+        bad = costs.index[~np.isfinite(costs["k$_per_year"].to_numpy())].tolist()
+        raise ValueError(f"non-finite cost component(s): {bad}")
     costs.loc["total"] = costs["k$_per_year"].sum()
     return Summary(capacities=capacities, zones=zones, flows=flows, costs=costs,
                    objective=float(pm.model.objective.value))

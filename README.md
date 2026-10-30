@@ -4,11 +4,11 @@ A documented, runnable implementation of the planning framework in:
 
 > Honglin Li and Jie Zhang. **Hydrogen's role in expanding renewable energy and reducing carbon emissions in Texas.** *International Journal of Hydrogen Energy* 113 (2025) 77–89. [doi:10.1016/j.ijhydene.2025.02.303](https://doi.org/10.1016/j.ijhydene.2025.02.303)
 
-The framework is a two-stage stochastic linear program. It decides where to build electrolyzers, hydrogen storage tanks and hydrogen fuel cells, and how to operate them hour by hour together with batteries, backup gas generation, SMR hydrogen and an inter-zone hydrogen pipeline network. It does this under uncertain future renewable build-out and electricity demand.
+The framework is a two-stage stochastic linear program. It decides where to build electrolyzers, hydrogen storage tanks and hydrogen fuel cells. It also decides how to operate them hour by hour, together with batteries, backup gas generation, SMR hydrogen and hydrogen transport between neighbouring zones. It does this under uncertain future renewable build-out and electricity demand.
 
 ## Research question
 
-Where should electrolyzers, hydrogen storage, fuel cells and inter-zonal hydrogen pipelines be built in the ERCOT system to absorb surplus renewable generation and supply industrial hydrogen demand, given that the 2030 renewable build-out and electricity demand are uncertain?
+Where should electrolyzers, hydrogen storage and fuel cells be built in the ERCOT system, and how should hydrogen move between zones, to absorb surplus renewable generation and supply industrial hydrogen demand? The 2030 renewable build-out and electricity demand are uncertain.
 
 ## System and scope
 
@@ -19,6 +19,8 @@ Where should electrolyzers, hydrogen storage, fuel cells and inter-zonal hydroge
 | Uncertainty | 3 electricity-demand levels × 3 completion rates of planned renewable capacity = 9 scenarios | any two-factor tree (`ScenarioTree`) |
 | First-stage decisions | electrolyzer, hydrogen tank and fuel-cell capacity per zone | same |
 | Second-stage decisions | hourly battery and tank operation, electrolysis, fuel-cell output, electricity from CCGT plants, SMR hydrogen, pipeline flows between adjacent zones | same |
+| Hydrogen transport | pipelines between adjacent zones, cost per tonne and km; no pipeline capacity or build decision | same, on the corridors listed in the inputs |
+| Capacity limits | electrolyzer capacity capped per zone (Section 3.2) | optional bounds per technology |
 | Objective | annualised installation cost + fixed O&M + expected operating cost, net of hydrogen and oxygen sales | same |
 | Carbon | CO2 from CCGT plants and SMR is captured and stored at a cost (CCUS) | same; emissions reported per zone |
 
@@ -32,9 +34,9 @@ The complete mathematics, with the article's equation numbers, is in [docs/formu
 | [`docs/data_pipeline.md`](docs/data_pipeline.md) | how each input is built from public sources (ERCOT SCED, EIA-860, LBNL queue, ERCOT load forecast, hydrogen-demand data), and the input file schemas |
 | [`docs/scenarios.md`](docs/scenarios.md) | the scenario tree and the sensitivity-case families, and how to express them |
 | [`docs/architecture.md`](docs/architecture.md) | modules, data flow, solver options, problem size, tests |
-| [`src/txh2_framework/`](src/txh2_framework/) | the implementation (linopy; HiGHS by default, Gurobi optional), data validation, result tables, command line |
-| [`examples/`](examples/) | `minimal.py` (one solve, a few seconds) and `sensitivity.py` (eight cases) on synthetic data |
-| [`tests/`](tests/) | 31 tests: schema checks, scenario construction, optimal solve, balance equations recomputed from the solution, variants |
+| [`src/txh2_framework/`](src/txh2_framework/) | the implementation (linopy; HiGHS by default, Gurobi optional), preprocessing helpers, data validation, result tables, command line |
+| [`examples/`](examples/) | `minimal.py` (one solve, a few seconds), `sensitivity.py` (eight cases) and `prepare_inputs.py` (raw interval records to an input directory), all on synthetic data |
+| [`tests/`](tests/) | 49 tests: input and parameter validation, preprocessing, scenario construction, optimal solve, balance equations recomputed from the solution, variants, command line |
 
 ## Quick start
 
@@ -74,9 +76,9 @@ summary.to_csv("outputs/capex_-50")
 
 ## Using your own data
 
-1. Build the eight input files described in [docs/data_pipeline.md](docs/data_pipeline.md). The format is validated when read: zone columns are matched by name, hours must be complete, and probabilities must sum to 1.
-2. Put your techno-economic values in `parameters.csv`. The article's benchmark values are listed in its Table 3.
-3. Run the benchmark and your sensitivity cases ([docs/scenarios.md](docs/scenarios.md)).
+1. Build the eight input files described in [docs/data_pipeline.md](docs/data_pipeline.md), following its preparation rules. `txh2_framework.preprocess` and `examples/prepare_inputs.py` cover the generic steps. The format is validated when read: zone columns are matched by name, hours must be complete, values must be finite, and probabilities must sum to 1.
+2. Put your techno-economic values in `parameters.csv`, in the units it states. Values in other units are refused. The article's benchmark values are listed in its Table 3 and need converting to these units ([docs/formulation.md](docs/formulation.md), conventions).
+3. Run the benchmark and your sensitivity cases ([docs/scenarios.md](docs/scenarios.md)). The output tables are described in [docs/architecture.md](docs/architecture.md#output-tables).
 
 A full-year model of eight zones and nine scenarios has about eight million variables. It needs a commercial barrier solver, or a reduced horizon with annualised weights ([docs/architecture.md](docs/architecture.md)).
 

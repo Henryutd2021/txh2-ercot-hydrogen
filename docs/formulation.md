@@ -1,7 +1,10 @@
 # Mathematical formulation
 
-This is the optimization model of Li & Zhang, "Hydrogen's role in expanding renewable energy and reducing carbon emissions in Texas", *International Journal of Hydrogen Energy* 113 (2025) 77–89, [doi:10.1016/j.ijhydene.2025.02.303](https://doi.org/10.1016/j.ijhydene.2025.02.303), Section 2, Eqs. (1)–(17).
-Notation follows the article's nomenclature. The last column of each table gives the name used in the code ([`model.py`](../src/txh2_framework/model.py), [`parameters.py`](../src/txh2_framework/parameters.py)).
+This document states the optimization model as implemented by this framework. The model is that of Li & Zhang, "Hydrogen's role in expanding renewable energy and reducing carbon emissions in Texas", *International Journal of Hydrogen Energy* 113 (2025) 77–89, [doi:10.1016/j.ijhydene.2025.02.303](https://doi.org/10.1016/j.ijhydene.2025.02.303), Section 2.
+
+- Equation numbers (1)–(17) follow the article, so that each part can be matched to it.
+- [Conventions of this implementation](#conventions-of-this-implementation) lists the definitions that the framework makes explicit.
+- Notation follows the article's nomenclature. The last column of each table gives the name used in the code ([`model.py`](../src/txh2_framework/model.py), [`parameters.py`](../src/txh2_framework/parameters.py)).
 
 The model is a two-stage stochastic linear program:
 
@@ -68,7 +71,7 @@ The benchmark values used in the article are listed in its Table 3. This reposit
 | $h^{tr}_{i,j,t,s}$ | second | hydrogen pipeline flow from $i$ to $j$, $(i,j) \in A$ | t | `h_tr` |
 | $w_{i,t,s}$, $o_{i,t,s}$ | second | water use and oxygen output | t | `w`, `o` |
 
-All variables are non-negative, and $0 \le \psi_i \le 1$ because $\psi_i$ is a rate.
+All variables are non-negative, and $0 \le \psi_i \le 1$ (see the conventions).
 
 ## Objective
 
@@ -92,6 +95,8 @@ $$
 $$
 
 The denominator in Eq. (2) is the present-worth factor over the lifetime. Dividing by it turns the installation cost into an equivalent annual cost (`Parameters.annuity_factor()`).
+
+In Eq. (3), every scenario-dependent operating term is weighted by the scenario probability $\xi_s$: the operating cost is its expected value over the scenarios (article Section 2).
 
 ## Constraints
 
@@ -159,6 +164,8 @@ $$
 \theta^{b}_{i,0,s} = 0.8\, \beta_i \tag{15}
 $$
 
+The share 0.8 is the default of the parameter `battery_initial_soc`.
+
 $$
 \theta^{h}_{i,0,s} = 0 \tag{16}
 $$
@@ -185,7 +192,7 @@ The right-hand side of Eq. (17) is data, so the constraint is linear (`Instance.
 
 ## Variant: demand-side load flexibility (article Section 3.1)
 
-In this variant, hourly demand may deviate from $\chi$ within a band of $\pm\varphi$ (the article uses $\varphi = 5\,\%$). The total demand of each zone and scenario over the horizon must stay unchanged. The adjusted demand $\tilde\chi_{i,t,s}$ is a variable:
+The article describes this variant as a band of ±5 % around the hourly demand, with total demand unchanged. The framework defines it as follows. Hourly demand may deviate from $\chi$ within a band of $\pm\varphi$, and the total demand of each zone and scenario over the horizon stays unchanged. The adjusted demand $\tilde\chi_{i,t,s}$ is a variable:
 
 $$
 (1-\varphi)\,\chi_{i,t,s} \le \tilde\chi_{i,t,s} \le (1+\varphi)\,\chi_{i,t,s}, \qquad \sum_{t \in T} \tilde\chi_{i,t,s} = \sum_{t \in T} \chi_{i,t,s} \quad \forall i, s
@@ -198,9 +205,16 @@ In code, set `Case(load_flexibility=0.05)` or `ModelOptions(load_flexibility=0.0
 ## Conventions of this implementation
 
 - **Units:** k\$, MWh (an hourly flow in MW is the same number in MWh), and tonnes. The objective is in k\$ per year.
+  - `parameters.csv` must state these units; values in other units are refused, not converted.
+  - Converting values from the literature: \$/kg equals k\$/t, \$/kW equals k\$/MW, and kWh/kg equals MWh/t, number for number. An O&M cost given as a share of the installation cost becomes share × $c^{ins}_k$ per year.
+  - The tank capacity $x_{i,2}$ is in tonnes, because Eq. (7) compares it with the tank level.
+- **Variable domains:** all variables are non-negative. $\psi_i$ is a rate, so $0 \le \psi_i \le 1$. $hd_i = \sum_t \kappa_{i,t}$.
+- **Operating cost:** all scenario-dependent terms of Eq. (3) are expected values (weighted by $\xi_s$).
+- **Initial storage levels:** the battery starts at `battery_initial_soc` × $\beta_i$ (0.8 by default, Eq. 15); the hydrogen tank starts empty (Eq. 16).
 - **Horizon:**
   - The article models a full year.
-  - For shorter horizons (examples, tests, representative periods), the operating terms of Eq. (3) are multiplied by $W = 8760 / \lvert T\rvert$, so that they stay annual next to the annual Capex and fixed O&M. For a full year, $W = 1$ (`Instance.hour_weight`).
+  - For a shorter, contiguous block of hours (examples, tests, a few weeks), the operating terms of Eq. (3) are multiplied by $W = 8760 / \lvert T\rvert$, so that they stay annual next to the annual Capex and fixed O&M. For a full year, $W = 1$ (`Instance.hour_weight`).
+  - The weight is uniform and storage links consecutive hours. Non-contiguous representative periods would need per-period weights and storage linking between periods; the framework does not implement them.
   - Eqs. (11)–(12) do not need the factor.
 - **Pipelines:** $h^{tr}$ exists only on the arcs in $A$, i.e. between adjacent zones listed in `pipelines.csv`. The sum over $j \neq i$ in Eq. (5) therefore runs over the neighbours of $i$.
 - **Zones without hydrogen demand** ($hd_i = 0$): Eq. (11) gives $\sum_s \xi_s \sum_t h^{se}_{i,t,s} = 0$. Such a zone can still produce hydrogen and send it to other zones. Its $\psi_i$ has no meaning and is not reported.
@@ -223,9 +237,18 @@ In code, set `Case(load_flexibility=0.05)` or `ModelOptions(load_flexibility=0.0
   - The formulation does not limit battery charging or discharging power. In hours with more surplus than the electrolyzers can take, the solver can therefore absorb the excess through the battery's round-trip losses, charging and discharging in the same hour.
   - If you prefer an explicit spill term, enable the curtailment extension below.
 
-## Extensions (off by default; not part of the article's formulation)
+## Study setting: capacity upper bounds
+
+Eqs. (1)–(17) place no upper bound on $x_{i,k}$. The article's case study caps electrolyzer capacity at 500 MW per zone, for spatial reasons (Section 3.2).
+
+- `ModelOptions(capacity_upper_bound={"electrolyzer": 500})` adds $x_{i,1} \le 500$.
+- One value bounds all technologies; a mapping bounds the named technologies only.
+- No bound is the default.
+
+## Extension (off by default; not part of the article's formulation)
 
 | Option | Effect |
 |---|---|
 | `ModelOptions(curtailment=True)` | adds $\epsilon^{curt}_{i,t,s} \ge 0$ (`curt`) with a minus sign on the left-hand side of Eq. (4) |
-| `ModelOptions(capacity_upper_bound=...)` | $x_{i,k} \le \bar{x}_k$, one value for all technologies or one per technology, e.g. `{"electrolyzer": 1000}` |
+
+Options given to `build_model` replace those of the instance. To keep a case's load flexibility and add the extension, use `ModelOptions.from_instance(inst, curtailment=True)`.

@@ -41,3 +41,27 @@ def test_hour_gap(tmp_path, base, tree):
     df.to_csv(tmp_path / "demand.csv", index=False)
     with pytest.raises(ValueError, match="without gaps"):
         read_inputs(tmp_path)
+
+
+def test_parameters_csv_unit_and_empty_value(tmp_path, base, tree):
+    write_inputs(tmp_path, base, tree)
+    df = pd.read_csv(tmp_path / "parameters.csv")
+    df.loc[df["name"] == "c_pen", "unit"] = "$/MWh"
+    df.to_csv(tmp_path / "parameters.csv", index=False)
+    with pytest.raises(ValueError, match="unit"):
+        read_inputs(tmp_path)
+    write_inputs(tmp_path, base, tree)
+    df = pd.read_csv(tmp_path / "parameters.csv")
+    df.loc[df["name"] == "rho_h", "value"] = np.nan
+    df.to_csv(tmp_path / "parameters.csv", index=False)
+    with pytest.raises(ValueError, match="rho_h"):
+        read_inputs(tmp_path)
+
+
+def test_empty_hourly_value(tmp_path, base, tree):
+    write_inputs(tmp_path, base, tree)
+    df = pd.read_csv(tmp_path / "renewable_planned.csv")
+    df.loc[3, base.zones[1]] = np.nan
+    df.to_csv(tmp_path / "renewable_planned.csv", index=False)
+    with pytest.raises(ValueError, match="NaN"):
+        read_inputs(tmp_path)

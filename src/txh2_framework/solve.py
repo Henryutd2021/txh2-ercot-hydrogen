@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Mapping, Optional
 
 from .model import PlanningModel
 
@@ -25,14 +25,16 @@ class SolveResult:
     objective: float
 
 
-def solve(pm: PlanningModel, solver: str = "highs", log_file: Optional[str] = None,
-          require_optimal: bool = True, **solver_options) -> SolveResult:
+def solve(pm: PlanningModel, solver: str = "highs", options: Optional[Mapping[str, object]] = None,
+          log_file: Optional[str] = None, require_optimal: bool = True) -> SolveResult:
     """Solve in memory and return status, termination condition and objective (k$ per year).
 
-    ``solver_options`` are passed to the solver unchanged and override the defaults above.
+    ``solver`` selects the backend ("highs" or "gurobi"; other linopy solvers also work).
+    ``options`` are solver options, passed unchanged; they override the defaults above, e.g.
+    ``options={"solver": "simplex", "time_limit": 600}`` for HiGHS or ``{"Threads": 8}`` for Gurobi.
     """
     defaults = {"highs": HIGHS_DEFAULTS, "gurobi": GUROBI_DEFAULTS}.get(solver, {})
-    options = {**defaults, **solver_options}
+    options = {**defaults, **(options or {})}
     kwargs = {"io_api": "direct", "progress": False}
     if log_file:
         kwargs["log_fn"] = log_file

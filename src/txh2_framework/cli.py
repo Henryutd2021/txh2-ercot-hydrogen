@@ -30,7 +30,8 @@ def _cmd_run(args) -> int:
     case = Case(name=args.case_name, demand_scale=args.demand_scale, battery_completion=args.battery_completion,
                 capex_scale=args.capex_scale, params=params, load_flexibility=args.load_flexibility)
     inst = build_instance(base, tree, case)
-    pm = build_model(inst, ModelOptions.from_instance(inst, curtailment=args.curtailment))
+    bound = json.loads(args.capacity_bound) if args.capacity_bound else None
+    pm = build_model(inst, ModelOptions.from_instance(inst, curtailment=args.curtailment, capacity_upper_bound=bound))
     res = solve(pm, solver=args.solver)
     summary = summarize(pm)
     with pd.option_context("display.width", 140, "display.max_columns", 20, "display.float_format", "{:,.1f}".format):
@@ -65,6 +66,7 @@ def main(argv=None) -> int:
     r.add_argument("--capex-scale", type=float, default=1.0, help="factor on the installation cost of all hydrogen technologies")
     r.add_argument("--params", help='JSON object of parameter overrides, e.g. \'{"c_pen": 0.2}\'')
     r.add_argument("--load-flexibility", type=float, help="e.g. 0.05 for +-5 %% hourly demand flexibility")
+    r.add_argument("--capacity-bound", help='JSON upper bound(s) on capacity, e.g. \'{"electrolyzer": 500}\' (MW or t)')
     r.add_argument("--curtailment", action="store_true", help="extension: allow explicit curtailment")
     r.set_defaults(func=_cmd_run)
 

@@ -56,8 +56,8 @@ def _check_pipelines(zones: Sequence[str], pipelines: Sequence[Pipeline]) -> Non
         if key in seen:
             raise ValueError(f"pipeline {p.zone_a}-{p.zone_b} is listed twice")
         seen.add(key)
-        if not p.distance_km > 0:
-            raise ValueError(f"pipeline {p.zone_a}-{p.zone_b} needs a positive distance")
+        if not (np.isfinite(p.distance_km) and p.distance_km > 0):
+            raise ValueError(f"pipeline {p.zone_a}-{p.zone_b} needs a positive, finite distance")
 
 
 @dataclass
@@ -157,8 +157,8 @@ class Instance:
         self.h2_demand = _check_array("h2_demand", self.h2_demand, (n_i, n_t))
         self.battery_capacity = _check_array("battery_capacity", self.battery_capacity, (n_i,))
         _check_pipelines(self.zones, self.pipelines)
-        if not self.hour_weight > 0:
-            raise ValueError("hour_weight must be positive")
+        if not (np.isfinite(self.hour_weight) and self.hour_weight > 0):
+            raise ValueError("hour_weight must be positive and finite")
 
     def arcs(self):
         """Directed arcs (from, to, distance) of the pipeline network, both directions."""

@@ -7,9 +7,9 @@ generation, electricity purchased from CCGT plants, hydrogen sold, SMR hydrogen,
 pipeline flows on the arcs between adjacent zones, water use and oxygen output.
 
 Constraint names carry the equation numbers of the article (``eq04_energy_balance`` ... ``eq17_ccgt_bound``);
-``docs/formulation.md`` gives the mathematics. Two optional extensions, both off by default and
-not part of the article's formulation, are documented there as well: an explicit curtailment
-variable and upper bounds on the installed capacities.
+``docs/formulation.md`` gives the mathematics, the conventions of this implementation, and two
+options that are off by default: upper bounds on the installed capacities (the article caps
+electrolyzer capacity per zone) and an explicit curtailment variable (an extension).
 """
 
 from __future__ import annotations
@@ -35,12 +35,32 @@ class ModelOptions:
     load_flexibility      e.g. 0.05: hourly demand may move within ±5 % of χ while each zone's total
                           demand over the horizon is unchanged (article Section 3.1). None = fixed demand.
     curtailment           extension: add a non-negative curtailment variable to Eq. (4).
-    capacity_upper_bound  extension: upper bound on x[i, k], one value or one per technology.
+    capacity_upper_bound  upper bound on x[i, k], one value or one per technology, e.g.
+                          {"electrolyzer": 500}; the article caps electrolyzer capacity per zone (Section 3.2).
+
+    Options passed to :func:`build_model` replace those of the instance. To keep the load flexibility
+    of a ``Case`` and add other options, use ``ModelOptions.from_instance(inst, curtailment=True)``.
     """
 
     load_flexibility: Optional[float] = None
     curtailment: bool = False
     capacity_upper_bound: CapacityBound = None
+
+    def __post_init__(self) -> None:
+        f = self.load_flexibility
+        if f is not None and not (np.isfinite(f) and 0 <= f < 1):
+            raise ValueError("load_flexibility must be in [0, 1)")
+        bound = self.capacity_upper_bound
+        values = []
+        if isinstance(bound, Mapping):
+            unknown = set(bound) - set(TECHNOLOGIES)
+            if unknown:
+                raise ValueError(f"capacity_upper_bound: unknown technology {sorted(unknown)}; use {TECHNOLOGIES}")
+            values = list(bound.values())
+        elif bound is not None:
+            values = [bound]
+        if any(np.isnan(float(v)) or float(v) < 0 for v in values):
+            raise ValueError("capacity_upper_bound must be non-negative (inf = no bound)")
 
     @classmethod
     def from_instance(cls, inst: Instance, **overrides) -> "ModelOptions":
@@ -72,8 +92,16 @@ def _capacity_upper(bound: CapacityBound, coords) -> Union[float, xr.DataArray]:
 
 
 def build_model(inst: Instance, options: Optional[ModelOptions] = None) -> PlanningModel:
-    """Build the linopy model of one instance."""
+    """Build the linopy model of one instance.
+
+    Without ``options``, the load flexibility of the instance's ``Case`` is used. With ``options``,
+    a load flexibility that differs from the instance's is refused, so that it cannot be lost by accident.
+    """
     opt = options or ModelOptions.from_instance(inst)
+    case_flex = inst.meta.get("load_flexibility")
+    if case_flex is not None and opt.load_flexibility != case_flex:
+        raise ValueError(f"the instance was built with load_flexibility={case_flex}, the options say "
+                         f"{opt.load_flexibility}; use ModelOptions.from_instance(inst, ...) to keep it")
     p = inst.params
     n_i = len(inst.zones)
 

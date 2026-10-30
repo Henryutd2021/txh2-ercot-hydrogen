@@ -9,7 +9,7 @@ An input directory holds eight CSV files:
     renewable_planned.csv   hour, <one column per zone>      output of planned capacity at 100 %, MWh
     hydrogen_demand.csv     hour, <one column per zone>      hydrogen demand, t
     scenario_levels.csv     factor, level, value, probability
-    parameters.csv          name, value, unit
+    parameters.csv          name, value, unit   (units must be exactly those of parameters.canonical_units())
 
 Hourly files have one row per hour, ``hour`` = 1..T. Zone columns are matched to ``zones.csv`` by
 name; their order does not matter, but every zone must appear exactly once.
@@ -60,8 +60,11 @@ def read_inputs(directory) -> Tuple[BaseInputs, ScenarioTree]:
     lengths = {a.shape[1] for a in arrays.values()}
     if len(lengths) != 1:
         raise ValueError("hourly files have different numbers of rows")
-    params_df = pd.read_csv(d / "parameters.csv")
-    params = Parameters.from_records(zip(params_df["name"], params_df["value"]))
+    params_df = pd.read_csv(d / "parameters.csv", dtype={"name": str, "unit": str}, keep_default_na=False, na_values=[""])
+    missing_cols = {"name", "value", "unit"} - set(params_df.columns)
+    if missing_cols:
+        raise ValueError(f"parameters.csv: missing column(s) {sorted(missing_cols)}")
+    params = Parameters.from_records(params_df[["name", "value", "unit"]].itertuples(index=False, name=None))
     levels_df = pd.read_csv(d / "scenario_levels.csv")
     tree = tree_from_table(list(levels_df[["factor", "level", "value", "probability"]].itertuples(index=False, name=None)))
     base = BaseInputs(

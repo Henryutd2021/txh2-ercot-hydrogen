@@ -102,12 +102,35 @@ def test_without_pipelines(base, tree):
     assert s.flows.empty and max(balance_residuals(pm).values()) < TOL
 
 
+def test_model_options_validation(base, tree):
+    with pytest.raises(ValueError, match="load_flexibility"):
+        ModelOptions(load_flexibility=1.1)
+    with pytest.raises(ValueError, match="unknown technology"):
+        ModelOptions(capacity_upper_bound={"electrolyser": 10.0})
+    with pytest.raises(ValueError, match="non-negative"):
+        ModelOptions(capacity_upper_bound=-1.0)
+    inst = build_instance(base, tree, Case(name="lf", load_flexibility=0.05))
+    with pytest.raises(ValueError, match="from_instance"):
+        build_model(inst, ModelOptions(curtailment=True))          # would silently drop the flexibility
+    pm = build_model(inst, ModelOptions.from_instance(inst, curtailment=True))
+    assert "chi_adj" in pm.model.variables and "curt" in pm.model.variables
+
+
+def test_solver_options_mapping(base, tree):
+    pm = build_model(build_instance(base, tree))
+    result = solve(pm, options={"solver": "simplex"})           # a HiGHS option named like the backend argument
+    assert result.termination == "optimal"
+
+
 def test_cli(tmp_path):
     inputs, out = tmp_path / "inputs", tmp_path / "out"
     assert cli_main(["synthetic", str(inputs), "--zones", "3", "--hours", "24"]) == 0
-    assert cli_main(["run", str(inputs), "--out-dir", str(out), "--load-flexibility", "0.05"]) == 0
+    assert cli_main(["run", str(inputs), "--out-dir", str(out), "--load-flexibility", "0.05",
+                     "--capacity-bound", '{"electrolyzer": 50}', "--curtailment"]) == 0
     for name in ("capacities.csv", "zones.csv", "flows.csv", "costs.csv", "balance_residuals.json"):
         assert (out / name).exists()
+    import pandas as pd
+    assert pd.read_csv(out / "capacities.csv")["electrolyzer"].max() <= 50 + TOL
 
 
 def test_minimal_example_runs():

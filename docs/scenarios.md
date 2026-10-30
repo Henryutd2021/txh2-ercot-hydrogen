@@ -87,4 +87,5 @@ From the command line, a case is given as options:
 txh2-framework run my_inputs/ --capex-scale 0.5 --out-dir outputs/capex_-50
 txh2-framework run my_inputs/ --params '{"c_pen": 0.2}' --out-dir outputs/ccgt_200
 txh2-framework run my_inputs/ --load-flexibility 0.05 --out-dir outputs/load_flex
+txh2-framework run my_inputs/ --capacity-bound '{"electrolyzer": 500}' --out-dir outputs/capped
 ```

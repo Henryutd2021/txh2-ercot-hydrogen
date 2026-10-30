@@ -30,7 +30,8 @@ def test_synthetic_inputs_are_valid(base):
     ({"pipelines": (Pipeline("Z1", "Z9", 100.0),)}, "unknown zone"),
     ({"pipelines": (Pipeline("Z1", "Z1", 100.0),)}, "itself"),
     ({"pipelines": (Pipeline("Z1", "Z2", 100.0), Pipeline("Z2", "Z1", 90.0))}, "twice"),
-    ({"pipelines": (Pipeline("Z1", "Z2", 0.0),)}, "positive distance"),
+    ({"pipelines": (Pipeline("Z1", "Z2", 0.0),)}, "positive, finite distance"),
+    ({"pipelines": (Pipeline("Z1", "Z2", float("inf")),)}, "positive, finite distance"),
     ({"zones": ("Z1", "Z1", "Z3")}, "unique"),
 ])
 def test_base_inputs_validation(base, change, message):
@@ -89,3 +90,26 @@ def test_case_overrides(base, tree):
     assert inst.params.c_ins["electrolyzer"] == 0.5 * base.params.c_ins["electrolyzer"]
     with pytest.raises(KeyError):
         build_instance(base, tree, Case(completion_rates={"X": 0.5}))
+
+
+@pytest.mark.parametrize("field, value", [("rho_h", float("nan")), ("c_w", float("inf")), ("lambda_e2h", float("nan")),
+                                          ("c_pen", -0.1), ("lifetime", 2.5), ("delta", 1.0)])
+def test_parameters_reject_invalid_values(field, value):
+    with pytest.raises(ValueError):
+        dataclasses.replace(illustrative_parameters(), **{field: value})
+    with pytest.raises(ValueError):
+        dataclasses.replace(illustrative_parameters(), c_ins={"electrolyzer": float("nan"), "tank": 1.0, "fuel_cell": 1.0})
+
+
+def test_parameter_records_check_units_and_duplicates():
+    records = illustrative_parameters().to_records()
+    assert Parameters.from_records(records) == illustrative_parameters()
+    wrong_unit = [(n, v, "$/MWh") if n == "c_pen" else (n, v, u) for n, v, u in records]
+    with pytest.raises(ValueError, match="expected 'k\\$/MWh'"):
+        Parameters.from_records(wrong_unit)
+    with pytest.raises(ValueError, match="more than once"):
+        Parameters.from_records(records + [("c_pen", 0.2, "k$/MWh")])
+    with pytest.raises(ValueError, match="not a number"):
+        Parameters.from_records([(n, "" if n == "c_w" else v, u) for n, v, u in records])
+    with pytest.raises(ValueError, match="finite"):
+        Parameters.from_records([(n, float("nan") if n == "c_w" else v, u) for n, v, u in records])

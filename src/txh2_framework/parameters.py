@@ -12,8 +12,10 @@ synthetic example.
 
 from __future__ import annotations
 
+import math
+import numbers
 from dataclasses import asdict, dataclass, replace
-from typing import Dict, Mapping
+from typing import Dict, Iterable, Mapping, Tuple
 
 # Technology set K of the article: k = 1 electrolyzer, k = 2 hydrogen storage tank, k = 3 fuel cell.
 TECHNOLOGIES = ("electrolyzer", "tank", "fuel_cell")
@@ -76,18 +78,20 @@ class Parameters:
             extra = set(costs) - set(TECHNOLOGIES)
             if missing or extra:
                 raise ValueError(f"{name} needs exactly the keys {TECHNOLOGIES}; missing {sorted(missing)}, extra {sorted(extra)}")
-            if any(v < 0 for v in costs.values()):
-                raise ValueError(f"{name} must be non-negative")
-            object.__setattr__(self, name, dict(costs))
-        if not 0 <= self.delta < 1:
+            for k, v in costs.items():
+                _check_value(f"{name}.{k}", v)
+            object.__setattr__(self, name, {k: float(v) for k, v in costs.items()})
+        for name in SCALAR_PARAMETERS:
+            _check_value(name, getattr(self, name))
+        if not self.delta < 1:
             raise ValueError("delta must be in [0, 1)")
-        if self.lifetime < 1:
-            raise ValueError("lifetime must be at least one year")
+        if int(self.lifetime) != self.lifetime or self.lifetime < 1:
+            raise ValueError("lifetime must be a whole number of years, at least 1")
         for name in ("lambda_e2h", "lambda_h2e", "eta_cha", "eta_dis"):
             if getattr(self, name) <= 0:
                 raise ValueError(f"{name} must be positive")
         for name in ("eta_cha", "eta_dis", "battery_initial_soc"):
-            if not 0 <= getattr(self, name) <= 1:
+            if not getattr(self, name) <= 1:
                 raise ValueError(f"{name} must be in [0, 1]")
 
     def annuity_factor(self) -> float:
@@ -112,32 +116,77 @@ class Parameters:
 
     def to_records(self):
         """Flat (name, value, unit) records, the layout of ``parameters.csv``."""
-        rows = []
-        for k in TECHNOLOGIES:
-            rows.append((f"c_ins.{k}", self.c_ins[k], f"k$/{TECHNOLOGY_UNITS[k]}"))
-        for k in TECHNOLOGIES:
-            rows.append((f"c_om.{k}", self.c_om[k], f"k$/{TECHNOLOGY_UNITS[k]}/yr"))
-        for name, (_, unit, _) in SCALAR_PARAMETERS.items():
-            rows.append((name, getattr(self, name), unit))
-        return rows
+        return [(name, self._value(name), unit) for name, unit in canonical_units().items()]
+
+    def _value(self, name: str):
+        if "." in name:
+            group, tech = name.split(".", 1)
+            return getattr(self, group)[tech]
+        return getattr(self, name)
 
     @classmethod
-    def from_records(cls, records) -> "Parameters":
-        """Inverse of :meth:`to_records`; ``records`` is an iterable of (name, value)."""
-        c_ins, c_om, scalars = {}, {}, {}
-        for name, value in records:
-            if name.startswith("c_ins."):
-                c_ins[name.split(".", 1)[1]] = float(value)
-            elif name.startswith("c_om."):
-                c_om[name.split(".", 1)[1]] = float(value)
-            elif name in SCALAR_PARAMETERS:
-                scalars[name] = int(float(value)) if name == "lifetime" else float(value)
-            else:
+    def from_records(cls, records: Iterable[Tuple]) -> "Parameters":
+        """Inverse of :meth:`to_records`. ``records`` holds (name, value) or (name, value, unit).
+
+        When a unit is given it must equal the unit of :func:`canonical_units` exactly: the model
+        does not convert units, so a value in other units (for example $/MWh instead of k$/MWh)
+        is refused rather than read 1,000 times too large. Duplicate names are refused too.
+        """
+        units = canonical_units()
+        c_ins, c_om, scalars, seen = {}, {}, {}, set()
+        for rec in records:
+            name, value = str(rec[0]).strip(), rec[1]
+            if name not in units:
                 raise KeyError(f"unknown parameter {name!r}")
-        missing = set(SCALAR_PARAMETERS) - set(scalars) - {"battery_initial_soc"}
+            if name in seen:
+                raise ValueError(f"parameter {name!r} is given more than once")
+            seen.add(name)
+            if len(rec) > 2:
+                unit = "" if rec[2] is None or (isinstance(rec[2], float) and math.isnan(rec[2])) else str(rec[2]).strip()
+                if unit != units[name]:
+                    raise ValueError(f"parameter {name!r} has unit {unit!r}; expected {units[name]!r} (convert the value first)")
+            value = _to_float(name, value)
+            if name.startswith("c_ins."):
+                c_ins[name.split(".", 1)[1]] = value
+            elif name.startswith("c_om."):
+                c_om[name.split(".", 1)[1]] = value
+            else:
+                scalars[name] = value
+        missing = set(units) - seen - {"battery_initial_soc"}
         if missing:
             raise KeyError(f"missing parameter(s): {sorted(missing)}")
+        if "lifetime" in scalars:
+            if scalars["lifetime"] != int(scalars["lifetime"]):
+                raise ValueError("lifetime must be a whole number of years")
+            scalars["lifetime"] = int(scalars["lifetime"])
         return cls(c_ins=c_ins, c_om=c_om, **scalars)
 
 
-__all__ = ["Parameters", "TECHNOLOGIES", "TECHNOLOGY_UNITS", "SCALAR_PARAMETERS"]
+def canonical_units() -> Dict[str, str]:
+    """Parameter name -> unit, in the order of ``parameters.csv``."""
+    units = {f"c_ins.{k}": f"k$/{TECHNOLOGY_UNITS[k]}" for k in TECHNOLOGIES}
+    units.update({f"c_om.{k}": f"k$/{TECHNOLOGY_UNITS[k]}/yr" for k in TECHNOLOGIES})
+    units.update({name: unit for name, (_, unit, _) in SCALAR_PARAMETERS.items()})
+    return units
+
+
+def _to_float(name: str, value) -> float:
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"parameter {name!r}: {value!r} is not a number") from None
+    _check_value(name, v)
+    return v
+
+
+def _check_value(name: str, value) -> None:
+    """Every parameter of the model is a finite, non-negative number."""
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
+        raise ValueError(f"parameter {name!r} must be a number, got {value!r}")
+    if not math.isfinite(value):
+        raise ValueError(f"parameter {name!r} must be finite, got {value!r}")
+    if value < 0:
+        raise ValueError(f"parameter {name!r} must be non-negative, got {value!r}")
+
+
+__all__ = ["Parameters", "TECHNOLOGIES", "TECHNOLOGY_UNITS", "SCALAR_PARAMETERS", "canonical_units"]

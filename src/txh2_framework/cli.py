@@ -11,7 +11,7 @@ import pandas as pd
 
 from .io import read_inputs, write_inputs
 from .model import ModelOptions, build_model
-from .results import balance_residuals, summarize
+from .results import balance_residuals, format_table, summarize
 from .scenarios import Case, build_instance
 from .solve import solve
 from .synthetic import article_scenario_tree, synthetic_inputs
@@ -36,8 +36,8 @@ def _cmd_run(args) -> int:
     summary = summarize(pm)
     with pd.option_context("display.width", 140, "display.max_columns", 20, "display.float_format", "{:,.1f}".format):
         print(f"case {case.name}: {res.termination}, objective {res.objective:,.1f} k$/yr")
-        print(summary.capacities)
-        print(summary.zones[["green_h2_sold_t", "smr_h2_t", "electrolysis_mwh", "ccgt_mwh", "ccgt_co2_t"]])
+        print(format_table(summary.capacities))
+        print(format_table(summary.zones[["green_h2_sold_t", "smr_h2_t", "electrolysis_mwh", "ccgt_mwh", "ccgt_co2_t"]]))
     if args.out_dir:
         summary.to_csv(args.out_dir)
         (Path(args.out_dir) / "balance_residuals.json").write_text(json.dumps(balance_residuals(pm), indent=2))

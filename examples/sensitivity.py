@@ -8,7 +8,8 @@ for ERCOT.
 
 import pandas as pd
 
-from txh2_framework import Case, article_scenario_tree, build_instance, build_model, solve, summarize, synthetic_inputs
+from txh2_framework import (Case, article_scenario_tree, build_instance, build_model, format_table, solve, summarize,
+                            synthetic_inputs)
 
 CASES = [
     Case("benchmark", "synthetic benchmark"),
@@ -42,7 +43,7 @@ def main() -> None:
             "smr_co2_t": s.zones["smr_co2_t"].sum(),
         })
     with pd.option_context("display.width", 160, "display.max_columns", 20, "display.float_format", "{:,.1f}".format):
-        print(pd.DataFrame(rows).set_index("case"))
+        print(format_table(pd.DataFrame(rows).set_index("case")))
 
 
 if __name__ == "__main__":

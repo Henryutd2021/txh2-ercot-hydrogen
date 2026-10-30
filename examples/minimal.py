@@ -9,7 +9,8 @@ import time
 
 import pandas as pd
 
-from txh2_framework import article_scenario_tree, balance_residuals, build_instance, build_model, solve, summarize, synthetic_inputs
+from txh2_framework import (article_scenario_tree, balance_residuals, build_instance, build_model, format_table, solve,
+                            summarize, synthetic_inputs)
 
 
 def main() -> None:
@@ -26,14 +27,14 @@ def main() -> None:
     print(f"solver: {result.termination}; objective {result.objective:,.0f} k$/yr; {time.perf_counter() - start:.1f} s")
     with pd.option_context("display.width", 140, "display.max_columns", 20, "display.float_format", "{:,.1f}".format):
         print("\nInstalled capacity (electrolyzer and fuel cell in MW, tank in t):")
-        print(summary.capacities)
+        print(format_table(summary.capacities))
         print("\nExpected annual quantities by zone:")
-        print(summary.zones[["h2_demand_t", "green_h2_sold_t", "smr_h2_t", "satisfaction_rate",
-                             "electrolysis_mwh", "ccgt_mwh", "ccgt_co2_t", "smr_co2_t"]])
+        print(format_table(summary.zones[["h2_demand_t", "green_h2_sold_t", "smr_h2_t", "satisfaction_rate",
+                                          "electrolysis_mwh", "ccgt_mwh", "ccgt_co2_t", "smr_co2_t"]]))
         print("\nPipeline flows (expected annual, t):")
-        print(summary.flows[summary.flows["expected_flow_t"] > 0].to_string(index=False))
+        print(format_table(summary.flows[summary.flows["expected_flow_t"] > 0], index=False))
         print("\nAnnual cost components (k$/yr):")
-        print(summary.costs)
+        print(format_table(summary.costs))
     worst = max(balance_residuals(pm).values())
     print(f"\nlargest balance residual: {worst:.1e}")
 

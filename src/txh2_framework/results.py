@@ -18,6 +18,11 @@ from .parameters import TECHNOLOGIES
 
 HOURLY = ("eps_h", "eps_dis", "eps_n", "eps_cha", "eps_e2h", "h_se", "h_smr", "w", "o")
 
+# How printed tables show a cell without a value. In the result tables this is only the satisfaction
+# rate of a zone without hydrogen demand, where psi has no meaning (docs/formulation.md, conventions).
+NO_VALUE = "–"
+NO_DEMAND_NOTE = f"{NO_VALUE} : zone without hydrogen demand"
+
 
 def solution_arrays(pm: PlanningModel) -> Dict[str, np.ndarray]:
     """Solution values as numpy arrays: [i, t, s] for hourly variables (storage levels without the
@@ -95,6 +100,20 @@ class Summary:
         self.zones.to_csv(out / "zones.csv")
         self.flows.to_csv(out / "flows.csv", index=False)
         self.costs.to_csv(out / "costs.csv")
+
+
+def format_table(table: pd.DataFrame, index: bool = True) -> str:
+    """A result table as text, for printing.
+
+    Cells without a value (NaN) are shown as "–"; when they are satisfaction rates, a footnote says
+    that the zone has no hydrogen demand. The table itself is not changed: it keeps NaN, and
+    ``Summary.to_csv`` leaves such cells empty. Numbers follow the pandas display options, e.g.
+    ``display.float_format``.
+    """
+    text = table.to_string(na_rep=NO_VALUE, index=index)
+    if "satisfaction_rate" in table.columns and table["satisfaction_rate"].isna().any():
+        text += "\n" + NO_DEMAND_NOTE
+    return text
 
 
 def _clean(a: np.ndarray, tol: float = 1e-9) -> np.ndarray:

@@ -19,16 +19,16 @@ from .inputs import BaseInputs, Instance, Pipeline
 from .io import read_inputs, write_inputs
 from .model import ModelOptions, PlanningModel, build_model
 from .parameters import TECHNOLOGIES, Parameters
-from .results import Summary, balance_residuals, solution_arrays, summarize
+from .results import Summary, balance_residuals, format_table, solution_arrays, summarize
 from .scenarios import Case, Level, ScenarioTree, build_instance
 from .solve import SolveError, SolveResult, solve
 from .synthetic import article_scenario_tree, illustrative_parameters, synthetic_inputs
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 __all__ = [
     "BaseInputs", "Instance", "Pipeline", "read_inputs", "write_inputs", "ModelOptions", "PlanningModel",
     "build_model", "TECHNOLOGIES", "Parameters", "Summary", "balance_residuals", "solution_arrays", "summarize",
-    "Case", "Level", "ScenarioTree", "build_instance", "SolveError", "SolveResult", "solve",
+    "format_table", "Case", "Level", "ScenarioTree", "build_instance", "SolveError", "SolveResult", "solve",
     "article_scenario_tree", "illustrative_parameters", "synthetic_inputs", "__version__",
 ]

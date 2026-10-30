@@ -26,7 +26,7 @@ flowchart TD
 | `io.py` | read and write the input directory format |
 | `model.py` | `ModelOptions`, `build_model`: variables, objective and constraints of [formulation.md](formulation.md), named by equation number |
 | `solve.py` | `solve`: in-memory hand-over to HiGHS (default) or Gurobi; raises `SolveError` unless the solution is optimal |
-| `results.py` | `solution_arrays`, `balance_residuals` (recomputes the balance equations from the solution), `summarize` and `Summary` |
+| `results.py` | `solution_arrays`, `balance_residuals` (recomputes the balance equations from the solution), `summarize` and `Summary`, `format_table` (a result table as text, for printing) |
 | `preprocess.py` | steps of the data pipeline: hourly output per resource, gap filling, sums by zone, capacity factors, planned output, flat hourly rates, assembly of `BaseInputs` from frames |
 | `synthetic.py` | the synthetic example region, illustrative parameters, the article's scenario tree |
 | `cli.py` | the `txh2-framework` command: `synthetic` and `run` |
@@ -81,6 +81,8 @@ Solving it is another matter. It needs a commercial barrier solver, or a shorter
 
 The command line also writes `balance_residuals.json`: the largest residual of Eqs. (4)–(6), (11), (12) and (17), recomputed from the solution.
 
+In the `Summary` tables, the `satisfaction_rate` of a zone without hydrogen demand is NaN, and `zones.csv` leaves it empty. Printed tables (the examples and the command line use `results.format_table`) show it as "–", with the footnote "– : zone without hydrogen demand".
+
 ## Tests
 
 `pytest` (directory `tests/`) checks:
@@ -93,4 +95,5 @@ The command line also writes `balance_residuals.json`: the largest residual of E
 - the bounds of Eqs. (7), (8), (13), (14) and (17);
 - that pipeline flows appear only on corridors;
 - that the cost components sum to the objective;
-- the load-flexibility variant, the capacity bound, the curtailment extension, option validation, solver options, a case without pipelines, the command line and the minimal example.
+- the load-flexibility variant, the capacity bound, the curtailment extension, option validation, solver options, a case without pipelines, the command line and the minimal example;
+- that printed tables show "–", not NaN, for a zone without hydrogen demand, while the table and `zones.csv` keep the value missing.

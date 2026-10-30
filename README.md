@@ -36,7 +36,7 @@ The complete mathematics, with the article's equation numbers, is in [docs/formu
 | [`docs/architecture.md`](docs/architecture.md) | modules, data flow, solver options, problem size, tests |
 | [`src/txh2_framework/`](src/txh2_framework/) | the implementation (linopy; HiGHS by default, Gurobi optional), preprocessing helpers, data validation, result tables, command line |
 | [`examples/`](examples/) | `minimal.py` (one solve, a few seconds), `sensitivity.py` (eight cases) and `prepare_inputs.py` (raw interval records to an input directory), all on synthetic data |
-| [`tests/`](tests/) | 49 tests: input and parameter validation, preprocessing, scenario construction, optimal solve, balance equations recomputed from the solution, variants, command line |
+| [`tests/`](tests/) | 50 tests: input and parameter validation, preprocessing, scenario construction, optimal solve, balance equations recomputed from the solution, variants, printed output, command line |
 
 ## Quick start
 

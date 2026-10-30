@@ -1,17 +1,20 @@
 """Model: optimal solve of the synthetic case, balance checks, variants and extensions."""
 
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from txh2_framework import (Case, ModelOptions, Pipeline, balance_residuals, build_instance, build_model,
-                            solution_arrays, solve, summarize)
+                            format_table, solution_arrays, solve, summarize)
 from txh2_framework.cli import main as cli_main
 
 TOL = 1e-6
+NAN_WORD = re.compile(r"\bnan\b", re.IGNORECASE)
 
 
 def test_benchmark_is_optimal(solved):
@@ -63,6 +66,24 @@ def test_costs_sum_to_objective(solved):
     s = summarize(pm)
     assert s.costs.loc["total"].iloc[0] == pytest.approx(result.objective, rel=1e-9)
     assert s.zones["green_h2_sold_t"].sum() > 0          # the synthetic case uses electrolysis
+
+
+def test_zone_without_demand_printed_as_dash(solved):
+    pm, _ = solved
+    s = summarize(pm)
+    no_demand = pm.instance.h2_demand.sum(axis=1) == 0
+    assert no_demand.any() and not no_demand.all()                        # the synthetic case has both kinds
+    assert s.zones["satisfaction_rate"][no_demand].isna().all()           # the table keeps NaN ...
+    assert s.zones["satisfaction_rate"][~no_demand].notna().all()
+    with pd.option_context("display.float_format", "{:,.1f}".format):
+        text = format_table(s.zones)
+    assert not NAN_WORD.search(text)                                      # ... the printed text shows "–"
+    assert text.splitlines()[-1] == "– : zone without hydrogen demand"
+    rows = {line.split()[0]: line.split() for line in text.splitlines()[2:-1]}
+    col = list(s.zones.columns).index("satisfaction_rate") + 1
+    for zone, missing in zip(s.zones.index, no_demand):
+        assert (rows[zone][col] == "–") == missing
+    assert "zone without hydrogen demand" not in format_table(s.capacities)   # footnote only when needed
 
 
 def test_load_flexibility(base, tree, solved):
@@ -122,15 +143,17 @@ def test_solver_options_mapping(base, tree):
     assert result.termination == "optimal"
 
 
-def test_cli(tmp_path):
+def test_cli(tmp_path, capsys):
     inputs, out = tmp_path / "inputs", tmp_path / "out"
     assert cli_main(["synthetic", str(inputs), "--zones", "3", "--hours", "24"]) == 0
     assert cli_main(["run", str(inputs), "--out-dir", str(out), "--load-flexibility", "0.05",
                      "--capacity-bound", '{"electrolyzer": 50}', "--curtailment"]) == 0
+    assert not NAN_WORD.search(capsys.readouterr().out)
     for name in ("capacities.csv", "zones.csv", "flows.csv", "costs.csv", "balance_residuals.json"):
         assert (out / name).exists()
-    import pandas as pd
     assert pd.read_csv(out / "capacities.csv")["electrolyzer"].max() <= 50 + TOL
+    rates = pd.read_csv(out / "zones.csv", index_col="zone", keep_default_na=False)["satisfaction_rate"]
+    assert rates["Z1"] == ""                                       # no hydrogen demand: the CSV cell stays empty
 
 
 def test_minimal_example_runs():
@@ -138,3 +161,5 @@ def test_minimal_example_runs():
     done = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, timeout=300)
     assert done.returncode == 0, done.stderr
     assert "optimal" in done.stdout
+    assert not NAN_WORD.search(done.stdout)
+    assert "– : zone without hydrogen demand" in done.stdout

@@ -75,7 +75,7 @@ flowchart LR
 
 - **Source:** ERCOT Long-Term Load Forecast, hourly forecasts by weather zone.
 - **Step:** take the target year and write one column per zone (MWh per hour). This is the medium (reference) level; the low and high levels are factors on it (`scenario_levels.csv`).
-- Columns are matched to zones **by name** when the file is read.
+- Columns are matched to zones by name when the file is read.
 
 ### 7. Hydrogen demand (`hydrogen_demand.csv`)
 

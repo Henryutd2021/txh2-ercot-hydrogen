@@ -228,4 +228,4 @@ In code, set `Case(load_flexibility=0.05)` or `ModelOptions(load_flexibility=0.0
 | Option | Effect |
 |---|---|
 | `ModelOptions(curtailment=True)` | adds $\epsilon^{curt}_{i,t,s} \ge 0$ (`curt`) with a minus sign on the left-hand side of Eq. (4) |
-| `ModelOptions(capacity_upper_bound=...)` | $x_{i,k} \le \bar{x}_k$, one value for all technologies or one per technology, e.g. `{"electrolyzer": 500}` |
+| `ModelOptions(capacity_upper_bound=...)` | $x_{i,k} \le \bar{x}_k$, one value for all technologies or one per technology, e.g. `{"electrolyzer": 1000}` |

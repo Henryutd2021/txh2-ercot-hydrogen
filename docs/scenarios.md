@@ -62,7 +62,7 @@ The article runs four families of sensitivity cases. Each one is a `Case`, i.e. 
 | CO2 abatement (Table 9: C3–C4) | different carbon costs for power and for SMR | `params={"c_p": …, "c_s": …}` |
 | Load flexibility (Section 3.1) | hourly demand ±5 % with fixed totals | `load_flexibility=0.05` |
 
-`Case` takes values, not percentages: for example, a completion rate of 0.4 or a price of 0.2 k\$/MWh. Writing each case this way keeps it explicit and reproducible. The article's tables define the case values.
+`Case` takes values, not percentages: for example, a completion rate of 0.4 or a price of 0.2 k\$/MWh. Each case therefore states exactly what it changes. The article's tables define the case values.
 
 Example on the synthetic data (also in [`examples/sensitivity.py`](../examples/sensitivity.py)):
 

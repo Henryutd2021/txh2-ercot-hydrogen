@@ -24,7 +24,7 @@ from .scenarios import Case, Level, ScenarioTree, build_instance
 from .solve import SolveError, SolveResult, solve
 from .synthetic import article_scenario_tree, illustrative_parameters, synthetic_inputs
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 __all__ = [
     "BaseInputs", "Instance", "Pipeline", "read_inputs", "write_inputs", "ModelOptions", "PlanningModel",

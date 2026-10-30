@@ -72,7 +72,7 @@ flowchart LR
   - existing storage: EIA-860 energy-storage file (nameplate energy capacity, county);
   - planned storage: storage projects in the interconnection queue by the target year.
 - **Step:** aggregate both by zone into `battery_existing_mwh` and `battery_planned_mwh`.
-- $\beta_i$ is an **energy** capacity (MWh). If a source gives only power (MW), convert it with an explicit storage duration and record that assumption.
+- $`\beta_i`$ is an **energy** capacity (MWh). If a source gives only power (MW), convert it with an explicit storage duration and record that assumption.
 
 ### 6. Electricity demand (`demand.csv`)
 
@@ -95,7 +95,7 @@ flowchart LR
 ### 8. Pipeline corridors (`pipelines.csv`)
 
 - One row per pair of **adjacent** zones (zones that share a border), with the straight-line distance between the zone centres in km. For example, a zone centre can be the centroid of its counties.
-- Flows are allowed in both directions; the transport cost is $c^{tr}$ per tonne and km.
+- Flows are allowed in both directions; the transport cost is $`c^{tr}`$ per tonne and km.
 
 ### 9. Parameters and scenario design
 
@@ -104,7 +104,7 @@ flowchart LR
 
 ## Data preparation rules and QA checks
 
-These rules keep the hourly series aligned. Equal-length arrays alone do not guarantee that hour $t$ means the same hour in every file.
+These rules keep the hourly series aligned. Equal-length arrays alone do not guarantee that hour $`t`$ means the same hour in every file.
 
 - **One clock:**
   - Convert every timestamp to one clock before aggregating, e.g. UTC or year-round Central Standard Time, with hour-beginning labels. ERCOT data are stamped in Central Prevailing Time, which observes daylight saving.
@@ -112,7 +112,7 @@ These rules keep the hourly series aligned. Equal-length arrays alone do not gua
   - Build one complete hourly axis (`preprocess.hourly_axis`) and reindex every series to it.
 - **Year length:**
   - A non-leap year has 8,760 hours.
-  - For a leap year, either drop 29 February in every series or keep 8,784 hours. The model only needs all files to use the same axis; `hour_weight` = 8760 / $\lvert T\rvert$ keeps costs annual.
+  - For a leap year, either drop 29 February in every series or keep 8,784 hours. The model only needs all files to use the same axis; `hour_weight` = 8760 / $`\lvert T\rvert`$ keeps costs annual.
 - **Missing data:**
   - An hour in which a resource has no interval record is missing (NaN), not zero.
   - Interpolate runs of up to a few hours (`fill_short_gaps`, `max_gap=3` by default). Fix longer runs at the source, or fill them by an explicit, recorded rule, such as the same hour on neighbouring days.

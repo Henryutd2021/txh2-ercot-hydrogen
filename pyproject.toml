@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "txh2-framework"
-version = "1.0.0"
+version = "1.0.1"
 description = "Two-stage stochastic planning of electrolyzers, hydrogen storage, fuel cells and inter-zone pipelines in a renewable-rich power system (framework of Li & Zhang, IJHE 2025)"
 readme = "README.md"
 license = {text = "MIT"}

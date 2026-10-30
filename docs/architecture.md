@@ -49,15 +49,15 @@ Arrays are ordered zone, hour, scenario (`[i, t, s]`).
 
 ## Problem size
 
-For $\lvert I\rvert$ zones, $\lvert T\rvert$ hours, $\lvert S\rvert$ scenarios and $\lvert A\rvert$ directed pipeline arcs, the model has about
+For $`\lvert I\rvert`$ zones, $`\lvert T\rvert`$ hours, $`\lvert S\rvert`$ scenarios and $`\lvert A\rvert`$ directed pipeline arcs, the model has about
 
-- $9\,\lvert I\rvert\,\lvert T\rvert\,\lvert S\rvert$ hourly variables: $\epsilon^{h}$, $\epsilon^{dis}$, $\epsilon^{n}$, $\epsilon^{cha}$, $\epsilon^{e2h}$, $h^{se}$, $h^{smr}$, $w$, $o$;
-- $2\,\lvert I\rvert(\lvert T\rvert+1)\lvert S\rvert$ storage levels, $\theta^{b}$ and $\theta^{h}$;
-- $\lvert A\rvert\,\lvert T\rvert\,\lvert S\rvert$ pipeline flows;
-- $4\,\lvert I\rvert$ first-stage variables, $x$ and $\psi$;
+- $`9\,\lvert I\rvert\,\lvert T\rvert\,\lvert S\rvert`$ hourly variables: $`\epsilon^{h}`$, $`\epsilon^{dis}`$, $`\epsilon^{n}`$, $`\epsilon^{cha}`$, $`\epsilon^{e2h}`$, $`h^{se}`$, $`h^{smr}`$, $`w`$, $`o`$;
+- $`2\,\lvert I\rvert(\lvert T\rvert+1)\lvert S\rvert`$ storage levels, $`\theta^{b}`$ and $`\theta^{h}`$;
+- $`\lvert A\rvert\,\lvert T\rvert\,\lvert S\rvert`$ pipeline flows;
+- $`4\,\lvert I\rvert`$ first-stage variables, $`x`$ and $`\psi`$;
 - somewhat fewer constraints than variables.
 
-The load-flexibility variant and the curtailment extension each add $\lvert I\rvert\,\lvert T\rvert\,\lvert S\rvert$ variables.
+The load-flexibility variant and the curtailment extension each add $`\lvert I\rvert\,\lvert T\rvert\,\lvert S\rvert`$ variables.
 
 | Instance | Variables (approx.) |
 |---|---|
@@ -77,7 +77,7 @@ Solving it is another matter. It needs a commercial barrier solver, or a shorter
 | `capacities.csv` | zone | `electrolyzer` (MW), `tank` (t), `fuel_cell` (MW) |
 | `zones.csv` | zone | `h2_demand_t`, `green_h2_sold_t`, `smr_h2_t` (t/yr); `satisfaction_rate` (–, empty where a zone has no hydrogen demand); `electrolysis_mwh`, `fuel_cell_mwh`, `ccgt_mwh` (MWh/yr); `ccgt_peak_mw` (MW, maximum over hours and scenarios); `ccgt_co2_t`, `smr_co2_t` (t CO2/yr); `battery_charge_mwh`, `battery_discharge_mwh`, `curtailment_mwh` (MWh/yr); `h2_export_t`, `h2_import_t` (t/yr) |
 | `flows.csv` | directed arc | `from`, `to`, `distance_km` (km), `expected_flow_t` (t/yr) |
-| `costs.csv` | cost component | `k$_per_year`: annualised installation, fixed O&M, pipeline transport, water, SMR hydrogen and carbon, CCGT electricity and CCS, hydrogen and oxygen revenue (negative), and `total` (equals the objective) |
+| `costs.csv` | cost component | `k$_per_year`: annualized installation, fixed O&M, pipeline transport, water, SMR hydrogen and carbon, CCGT electricity and CCS, hydrogen and oxygen revenue (negative), and `total` (equals the objective) |
 
 The command line also writes `balance_residuals.json`: the largest residual of Eqs. (4)–(6), (11), (12) and (17), recomputed from the solution.
 

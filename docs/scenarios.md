@@ -13,8 +13,8 @@ The article models two uncertain factors (Section 2, Tables 1–2).
 | | Medium | 30 % | 0.7 |
 | | High | 80 % | 0.2 |
 
-- The two factors are independent, so the nine combinations form the scenario set $S$.
-- Each scenario has probability $\xi_s = P(\text{demand level}) \cdot P(\text{completion level})$. For example, Medium–Medium has $0.5 \times 0.7 = 0.35$.
+- The two factors are independent, so the nine combinations form the scenario set $`S`$.
+- Each scenario has probability $`\xi_s = P(\text{demand level}) \cdot P(\text{completion level})`$. For example, Medium–Medium has $`0.5 \times 0.7 = 0.35`$.
 - Scenarios are ordered with the demand level in the outer loop (`L-L`, `L-M`, `L-H`, `M-L`, …), as in the article's Table 2.
 - Hydrogen demand and planned battery capacity are not uncertain in this design. The battery completion rate is 100 %.
 
@@ -28,23 +28,23 @@ In code:
 
 `scenarios.build_instance(base, tree, case)` builds the scenario-dependent data from the scenario-independent profiles of `BaseInputs`:
 
-$$
+```math
 \chi_{i,t,s} = \text{demand\_scale} \cdot f^{D}_{d(s)} \cdot \text{demand}_{i,t}
-$$
+```
 
-$$
+```math
 \epsilon^{r}_{i,t,s} = \text{renewable\_existing}_{i,t} + r_{c(s)} \cdot \text{renewable\_planned}_{i,t}
-$$
+```
 
-$$
+```math
 \beta_i = \text{battery\_existing}_i + b \cdot \text{battery\_planned}_i
-$$
+```
 
 The symbols are:
 
-- $f^{D}$: the demand factor of the demand level $d(s)$;
-- $r$: the completion rate of the completion level $c(s)$;
-- $b$: the share of planned battery capacity that is built;
+- $`f^{D}`$: the demand factor of the demand level $`d(s)`$;
+- $`r`$: the completion rate of the completion level $`c(s)`$;
+- $`b`$: the share of planned battery capacity that is built;
 - `renewable_planned`: the output of all planned wind and solar capacity at a 100 % completion rate. Each zone's planned capacity uses the zone's capacity factors (see [data_pipeline.md](data_pipeline.md)).
 
 ## Sensitivity cases

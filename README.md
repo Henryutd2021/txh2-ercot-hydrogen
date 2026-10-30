@@ -15,13 +15,13 @@ Where should electrolyzers, hydrogen storage and fuel cells be built in the ERCO
 | Aspect | In the article | In this framework |
 |---|---|---|
 | Spatial resolution | ERCOT's eight weather zones | any set of zones |
-| Temporal resolution | hourly, one year (8,760 h) | hourly, any horizon (operating costs are annualised) |
+| Temporal resolution | hourly, one year (8,760 h) | hourly, any horizon (operating costs are annualized) |
 | Uncertainty | 3 electricity-demand levels × 3 completion rates of planned renewable capacity = 9 scenarios | any two-factor tree (`ScenarioTree`) |
 | First-stage decisions | electrolyzer, hydrogen tank and fuel-cell capacity per zone | same |
 | Second-stage decisions | hourly battery and tank operation, electrolysis, fuel-cell output, electricity from CCGT plants, SMR hydrogen, pipeline flows between adjacent zones | same |
 | Hydrogen transport | pipelines between adjacent zones, cost per tonne and km; no pipeline capacity or build decision | same, on the corridors listed in the inputs |
 | Capacity limits | electrolyzer capacity capped per zone (Section 3.2) | optional bounds per technology |
-| Objective | annualised installation cost + fixed O&M + expected operating cost, net of hydrogen and oxygen sales | same |
+| Objective | annualized installation cost + fixed O&M + expected operating cost, net of hydrogen and oxygen sales | same |
 | Carbon | CO2 from CCGT plants and SMR is captured and stored at a cost (CCUS) | same; emissions reported per zone |
 
 The complete mathematics, with the article's equation numbers, is in [docs/formulation.md](docs/formulation.md).
@@ -80,7 +80,7 @@ summary.to_csv("outputs/capex_-50")
 2. Put your techno-economic values in `parameters.csv`, in the units it states. Values in other units are refused. The article's benchmark values are listed in its Table 3 and need converting to these units ([docs/formulation.md](docs/formulation.md), conventions).
 3. Run the benchmark and your sensitivity cases ([docs/scenarios.md](docs/scenarios.md)). The output tables are described in [docs/architecture.md](docs/architecture.md#output-tables).
 
-A full-year model of eight zones and nine scenarios has about eight million variables. It needs a commercial barrier solver, or a reduced horizon with annualised weights ([docs/architecture.md](docs/architecture.md)).
+A full-year model of eight zones and nine scenarios has about eight million variables. It needs a commercial barrier solver, or a reduced horizon with annualized weights ([docs/architecture.md](docs/architecture.md)).
 
 ## What this repository does not contain
 

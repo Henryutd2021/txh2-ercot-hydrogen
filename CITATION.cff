@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the article below (preferred citation) and this software."
+title: "TXH2 framework: two-stage stochastic planning of hydrogen in a renewable-rich power system"
+version: "1.0.0"
+repository-code: "https://github.com/Henryutd2021/txh2-ercot-hydrogen"
+license: MIT
+authors:
+  - family-names: Li
+    given-names: Honglin
+    orcid: "https://orcid.org/0000-0002-8405-3032"
+keywords:
+  - hydrogen
+  - renewable energy
+  - ERCOT
+  - stochastic optimization
+  - energy system planning
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Li
+      given-names: Honglin
+      orcid: "https://orcid.org/0000-0002-8405-3032"
+    - family-names: Zhang
+      given-names: Jie
+  title: "Hydrogen's role in expanding renewable energy and reducing carbon emissions in Texas"
+  journal: "International Journal of Hydrogen Energy"
+  volume: 113
+  start: 77
+  end: 89
+  year: 2025
+  doi: 10.1016/j.ijhydene.2025.02.303

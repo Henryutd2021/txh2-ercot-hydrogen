@@ -232,10 +232,7 @@ In code, set `Case(load_flexibility=0.05)` or `ModelOptions(load_flexibility=0.0
   - Eq. (11) links expected green-hydrogen sales over the horizon to the satisfaction rate.
   - Hydrogen demand is the same in all scenarios. The article keeps it fixed (Section 2).
 - **Storage:** the battery starts at 80 % of its capacity and the tank starts empty (Eqs. 15–16). The formulation has no end-of-horizon condition on storage levels.
-- **Surplus energy:**
-  - Eq. (4) is an equality, so every MWh of renewable output is used by the battery, by electrolysis, or by demand.
-  - The formulation does not limit battery charging or discharging power. In hours with more surplus than the electrolyzers can take, the solver can therefore absorb the excess through the battery's round-trip losses, charging and discharging in the same hour.
-  - If you prefer an explicit spill term, enable the curtailment extension below.
+- **Surplus energy:** Eq. (4) is an energy balance without a spill term. For applications that need explicit curtailment of renewable output, enable the curtailment extension below.
 
 ## Study setting: capacity upper bounds
 

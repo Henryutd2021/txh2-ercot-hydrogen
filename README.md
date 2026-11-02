@@ -1,5 +1,7 @@
 # TXH2 framework: stochastic planning of hydrogen in a renewable-rich power system
 
+Author: [Honglin Li](https://henryutd2021.github.io/)
+
 A documented, runnable implementation of the planning framework in:
 
 > Honglin Li and Jie Zhang. **Hydrogen's role in expanding renewable energy and reducing carbon emissions in Texas.** *International Journal of Hydrogen Energy* 113 (2025) 77–89. [doi:10.1016/j.ijhydene.2025.02.303](https://doi.org/10.1016/j.ijhydene.2025.02.303)
